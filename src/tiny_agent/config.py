@@ -162,10 +162,6 @@ def get_tiny_agent_config(config_path: str) -> TinyAgentConfig:
     ):
         raise ValueError("In-context example retriever provider not found in config")
 
-    whisper_provider = config.get("whisperProvider")
-    if whisper_provider is None or len(whisper_provider) == 0:
-        raise ValueError("Whisper provider not found in config")
-
     # Get the model configs
     llmcompiler_config = get_model_config(config, config["provider"], AgentType.MAIN)
     sub_agent_config = get_model_config(
@@ -190,15 +186,6 @@ def get_tiny_agent_config(config_path: str) -> TinyAgentConfig:
     hf_token = config.get("hfToken")
     zoom_access_token = config.get("zoomAccessToken")
 
-    # Get the whisper API key which is just the OpenAI API key
-    if (
-        not _is_valid_config_field(config, "openAIApiKey")
-        and os.environ.get("OPENAI_API_KEY") is None
-    ):
-        raise ValueError("OpenAI API key is needed for whisper API.")
-
-    whisper_config = get_whisper_config(config, whisper_provider)
-
     apps = set()
     for app in App:
         if config[f"{app.value}Enabled"]:
@@ -215,8 +202,7 @@ def get_tiny_agent_config(config_path: str) -> TinyAgentConfig:
         azure_api_version=azure_api_version,
         azure_endpoint=azure_endpoint,
         hf_token=hf_token,
-        zoom_access_token=zoom_access_token,
-        whisper_config=whisper_config,
+        zoom_access_token=zoom_access_token
     )
 
 

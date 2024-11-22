@@ -12,7 +12,8 @@ streaming_queue = asyncio.Queue[str | None]()
 
 LLM_ERROR_TOKEN = "###LLM_ERROR_TOKEN###"
 
-TINY_AGENT_DIR = os.path.expanduser("~/Library/Application Support/TinyAgent")
+TINY_AGENT_DIR = "./tiny_agent_logs"
+os.makedirs(TINY_AGENT_DIR, exist_ok=True)
 
 Tokenizer = PreTrainedTokenizer | PreTrainedTokenizerFast | Encoding
 
@@ -76,8 +77,6 @@ class TinyAgentConfig:
     # Other tokens
     hf_token: str | None
     zoom_access_token: str | None
-    # Whisper config
-    whisper_config: WhisperConfig
 
 
 class TinyAgentToolName(Enum):
