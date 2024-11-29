@@ -25,9 +25,10 @@ def default_dependency_rule(idx, args: str):
 class LLMCompilerPlanParser(AgentOutputParser, extra="allow"):
     """Planning output parser."""
 
-    def __init__(self, tools: Sequence[Union[Tool, StructuredTool]], **kwargs):
+    def __init__(self, tools: Sequence[Union[Tool, StructuredTool]], eval_mode:bool = False, **kwargs):
         super().__init__(**kwargs)
         self.tools = tools
+        self.eval_mode = eval_mode
 
     def parse(self, text: str) -> dict[int, Any]:
         # 1. search("Ronaldo number of kids") -> 1, "search", '"Ronaldo number of kids"'
@@ -49,6 +50,7 @@ class LLMCompilerPlanParser(AgentOutputParser, extra="allow"):
                 tool_name=tool_name,
                 args=args,
                 thought=thought,
+                eval_mode=self.eval_mode
             )
 
             graph_dict[idx] = task
@@ -114,6 +116,7 @@ def instantiate_task(
     tool_name: str,
     args: str,
     thought: str,
+    eval_mode: bool = False
 ) -> Task:
     dependencies = _get_dependencies_from_graph(idx, tool_name, args)
     args = _parse_llm_compiler_action_args(args)
@@ -134,4 +137,5 @@ def instantiate_task(
         stringify_rule=stringify_rule,
         thought=thought,
         is_join=tool_name == "join",
+        eval_mode=eval_mode
     )

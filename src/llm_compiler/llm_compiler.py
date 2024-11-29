@@ -62,6 +62,7 @@ class LLMCompiler(Chain, extra="allow"):
         max_replans: int,
         benchmark: bool,
         planner_custom_instructions_prompt: str | None = None,
+        eval_mode: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -69,6 +70,8 @@ class LLMCompiler(Chain, extra="allow"):
             tools: List of tools to use.
             max_replans: Maximum number of replans to do.
             benchmark: Whether to collect benchmark stats.
+            eval_mode: If True then no task will actually run. A predefined string is returned as the output for any
+                       task 
 
         Planner Args:
             planner_llm: LLM to use for planning.
@@ -100,6 +103,7 @@ class LLMCompiler(Chain, extra="allow"):
             custom_instructions=planner_custom_instructions_prompt,
             tools=tools,
             stop=planner_stop,
+            eval_mode=eval_mode
         )
 
         self.agent = LLMCompilerAgent(agent_llm)
@@ -325,3 +329,134 @@ class LLMCompiler(Chain, extra="allow"):
         await streaming_queue.put(None)
 
         return {self.output_key: answer}
+
+
+class LLMCompilerNoReplanning(Chain, extra="allow"):
+    """LLMCompiler Engine with a single planning step."""
+
+    """The step container to use."""
+    input_key: str = "input"
+    output_key: str = "output"
+
+    def __init__(
+        self,
+        tools: Sequence[Union[Tool, StructuredTool]],
+        planner_llm: BaseLLM,
+        planner_example_prompt: str,
+        planner_stop: Optional[list[str]],
+        planner_stream: bool,
+        benchmark: bool,
+        planner_custom_instructions_prompt: str | None = None,
+        eval_mode: bool = False,
+        **kwargs,
+    ) -> None:
+        """
+        Args:
+            tools: List of tools to use.
+            benchmark: Whether to collect benchmark stats.
+            eval_mode: If True then no task will actually run. A predefined string is returned as the output for any
+                       task 
+
+        Planner Args:
+            planner_llm: LLM to use for planning.
+            planner_example_prompt: Example prompt for planning.
+            planner_stop: Stop tokens for planning.
+            planner_stream: Whether to stream the planning.
+        """
+        super().__init__(**kwargs)
+
+        self.planner = Planner(
+            llm=planner_llm,
+            example_prompt=planner_example_prompt,
+            example_prompt_replan="",
+            custom_instructions=planner_custom_instructions_prompt,
+            tools=tools,
+            stop=planner_stop,
+            eval_mode=eval_mode
+        )
+
+        self.planner_stream = planner_stream
+        self.eval_mode = eval_mode
+
+        # callbacks
+        self.benchmark = benchmark
+        if benchmark:
+            self.planner_callback = AsyncStatsCallbackHandler(stream=planner_stream)
+            self.executor_callback = AsyncStatsCallbackHandler(stream=False)
+        else:
+            self.planner_callback = None
+            self.executor_callback = None
+
+    def get_all_stats(self):
+        stats = {}
+        if self.benchmark:
+            stats["planner"] = self.planner_callback.get_stats()
+            stats["executor"] = self.executor_callback.get_stats()
+            stats["total"] = {
+                k: v + stats["executor"].get(k, 0) for k, v in stats["planner"].items()
+            }
+
+        return stats
+
+
+    def reset_all_stats(self):
+        if self.planner_callback:
+            self.planner_callback.reset()
+        if self.executor_callback:
+            self.executor_callback.reset()
+
+    @property
+    def input_keys(self) -> List[str]:
+        return [self.input_key]
+
+    @property
+    def output_keys(self) -> List[str]:
+        return [self.output_key]
+
+    def _call(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[CallbackManagerForChainRun] = None,
+    ):
+        raise NotImplementedError("LLMCompiler is async only.")
+
+
+    async def _acall(
+        self,
+        inputs: Dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> Dict[str, Any]:
+        task_fetching_unit = TaskFetchingUnit(eval_mode=self.eval_mode)
+        if self.planner_stream:
+            task_queue = asyncio.Queue()
+            asyncio.create_task(
+                self.planner.aplan(
+                    inputs=inputs,
+                    task_queue=task_queue,
+                    is_replan=False,
+                    callbacks=(
+                        [self.planner_callback] if self.planner_callback else None
+                    ),
+                )
+            )
+            await task_fetching_unit.aschedule(
+                task_queue=task_queue, func=lambda x: None
+            )
+        else:
+            tasks = await self.planner.plan(
+                inputs=inputs,
+                is_replan=False,
+                callbacks=(
+                    [self.planner_callback] if self.planner_callback else None
+                ),
+            )
+            if self.benchmark:
+                self.planner_callback.additional_fields["num_tasks"] = len(tasks)
+            task_fetching_unit.set_tasks(tasks)
+            await task_fetching_unit.schedule()
+
+        tasks = task_fetching_unit.tasks
+        # End the generation request
+        await streaming_queue.put(None)
+
+        return {self.output_key: tasks}

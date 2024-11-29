@@ -77,6 +77,7 @@ class TinyAgentConfig:
     # Other tokens
     hf_token: str | None
     zoom_access_token: str | None
+    eval_mode: bool
 
 
 class TinyAgentToolName(Enum):

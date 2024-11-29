@@ -11,7 +11,7 @@ from src.tiny_agent.models import (
     LLM_ERROR_TOKEN,
     streaming_queue,
 )
-from src.tiny_agent.tiny_agent import TinyAgent
+from src.tiny_agent.tiny_agent import TinyAgentNoReplanning
 from src.utils.logger_utils import enable_logging, enable_logging_to_file, log
 
 enable_logging(True)
@@ -50,7 +50,7 @@ async def execute_command(request: TinyAgentRequest, config_path) -> StreamingRe
 
     try:
         tiny_agent_config = get_tiny_agent_config(config_path=config_path)
-        tiny_agent = TinyAgent(tiny_agent_config)
+        tiny_agent = TinyAgentNoReplanning(tiny_agent_config)
     except Exception as e:
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,

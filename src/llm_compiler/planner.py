@@ -95,8 +95,9 @@ class StreamingGraphParser:
     thought = ""
     graph_dict = {}
 
-    def __init__(self, tools: Sequence[Union[Tool, StructuredTool]]) -> None:
+    def __init__(self, tools: Sequence[Union[Tool, StructuredTool]], eval_mode: bool = False) -> None:
         self.tools = tools
+        self.eval_mode = eval_mode
 
     def _match_buffer_and_generate_task(self, suffix: str) -> Optional[Task]:
         """Runs every time "\n" is encountered in the input stream or at the end of the stream.
@@ -123,6 +124,7 @@ class StreamingGraphParser:
                 tool_name=tool_name,
                 args=args,
                 thought=self.thought,
+                eval_mode=self.eval_mode
             )
             self.thought = ""
             return task
@@ -165,11 +167,13 @@ class LLMCompilerCallback(AsyncCallbackHandler):
         self,
         queue: asyncio.Queue[Optional[str]],
         tools: Sequence[Union[Tool, StructuredTool]],
+        eval_mode: bool = False
     ):
         self._queue = queue
-        self._parser = StreamingGraphParser(tools=tools)
+        self._parser = StreamingGraphParser(tools=tools, eval_mode=eval_mode)
         self._tools = tools
         self._curr_idx = 0
+        self.eval_mode = eval_mode
 
     async def on_llm_start(self, serialized, prompts, **kwargs: Any) -> Any:
         """Run when LLM starts running."""
@@ -184,7 +188,8 @@ class LLMCompilerCallback(AsyncCallbackHandler):
     ) -> None:
         try:
             parsed_data = self._parser.ingest_token(token)
-            print(token, end="", flush=True)
+            if self.eval_mode==False:
+                print(token, end="", flush=True)
             await streaming_queue.put(token)
             if parsed_data:
                 self._curr_idx = parsed_data.idx
@@ -256,6 +261,7 @@ class Planner:
         example_prompt_replan: str,
         tools: Sequence[Union[Tool, StructuredTool]],
         stop: Optional[list[str]],
+        eval_mode: bool = False
     ):
         self.llm = llm
         # different system prompt is needed when replanning
@@ -273,8 +279,9 @@ class Planner:
             is_replan=True,
         )
         self.tools = tools
-        self.output_parser = LLMCompilerPlanParser(tools=tools)
+        self.output_parser = LLMCompilerPlanParser(tools=tools, eval_mode=eval_mode)
         self.stop = stop
+        self.eval_mode = eval_mode
 
     async def run_llm(
         self,
@@ -318,7 +325,8 @@ class Planner:
         else:
             raise ValueError("LLM must be either BaseChatModel or BaseLLM")
 
-        log("LLMCompiler planner response: \n", response, block=True)
+        if self.eval_mode==False:
+            log("LLMCompiler planner response: \n", response, block=True)
 
         return response
 
@@ -344,6 +352,7 @@ class Planner:
             LLMCompilerCallback(
                 queue=task_queue,
                 tools=self.tools,
+                eval_mode=self.eval_mode
             )
         ]
         if callbacks:

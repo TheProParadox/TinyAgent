@@ -161,6 +161,9 @@ def get_tiny_agent_config(config_path: str) -> TinyAgentConfig:
         and config.get("toolRAGProvider") is None
     ):
         raise ValueError("In-context example retriever provider not found in config")
+    
+    if (eval_mode := config.get("eval_mode")) is None:
+        raise ValueError("Evaluation mode specifier not found in config")
 
     # Get the model configs
     llmcompiler_config = get_model_config(config, config["provider"], AgentType.MAIN)
@@ -202,7 +205,8 @@ def get_tiny_agent_config(config_path: str) -> TinyAgentConfig:
         azure_api_version=azure_api_version,
         azure_endpoint=azure_endpoint,
         hf_token=hf_token,
-        zoom_access_token=zoom_access_token
+        zoom_access_token=zoom_access_token,
+        eval_mode=eval_mode
     )
 
 

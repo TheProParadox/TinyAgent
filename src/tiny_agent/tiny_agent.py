@@ -1,5 +1,5 @@
 from src.llm_compiler.constants import END_OF_PLAN, SUMMARY_RESULT
-from src.llm_compiler.llm_compiler import LLMCompiler
+from src.llm_compiler.llm_compiler import LLMCompiler, LLMCompilerNoReplanning
 from src.llm_compiler.planner import generate_llm_compiler_prompt
 from src.tiny_agent.computer import Computer
 from src.tiny_agent.config import TinyAgentConfig
@@ -156,3 +156,83 @@ class TinyAgent:
             result = self.pdf_summarizer_agent.cached_summary_result
 
         return result
+
+
+class TinyAgentNoReplanning(TinyAgent):
+    def __init__(self, config: TinyAgentConfig) -> None:
+        self.config = config
+
+        # Define the models
+        planner_llm = get_model(
+            model_type=config.llmcompiler_config.model_type.value,
+            model_name=config.llmcompiler_config.model_name,
+            api_key=config.llmcompiler_config.api_key,
+            stream=True,
+            vllm_port=config.llmcompiler_config.port,
+            temperature=0,
+            azure_api_version=config.azure_api_version,
+            azure_endpoint=config.azure_endpoint,
+            azure_deployment=config.llmcompiler_config.model_name,
+        )
+        sub_agent_llm = get_model(
+            model_type=config.sub_agent_config.model_type.value,
+            model_name=config.sub_agent_config.model_name,
+            api_key=config.sub_agent_config.api_key,
+            stream=False,
+            vllm_port=config.sub_agent_config.port,
+            temperature=0,
+            azure_api_version=config.azure_api_version,
+            azure_endpoint=config.azure_endpoint,
+            azure_deployment=config.sub_agent_config.model_name,
+        )
+
+        self.computer = Computer()
+        self.notes_agent = NotesAgent(
+            sub_agent_llm, config.sub_agent_config, config.custom_instructions
+        )
+        self.pdf_summarizer_agent = PDFSummarizerAgent(
+            sub_agent_llm, config.sub_agent_config, config.custom_instructions
+        )
+        self.compose_email_agent = ComposeEmailAgent(
+            sub_agent_llm, config.sub_agent_config, config.custom_instructions
+        )
+
+        tools = get_tiny_agent_tools(
+            computer=self.computer,
+            notes_agent=self.notes_agent,
+            pdf_summarizer_agent=self.pdf_summarizer_agent,
+            compose_email_agent=self.compose_email_agent,
+            tool_names=get_tool_names_from_apps(config.apps),
+            zoom_access_token=config.zoom_access_token,
+        )
+
+        # Define LLMCompiler
+        self.agent = LLMCompilerNoReplanning(
+            tools=tools,
+            planner_llm=planner_llm,
+            planner_custom_instructions_prompt=get_planner_custom_instructions_prompt(
+                tools=tools, custom_instructions=config.custom_instructions
+            ),
+            planner_example_prompt=DEFAULT_PLANNER_IN_CONTEXT_EXAMPLES_PROMPT,
+            planner_stop=[END_OF_PLAN],
+            planner_stream=True,
+            benchmark=False,
+            eval_mode=config.eval_mode
+        )
+
+        # Define ToolRAG
+        if config.embedding_model_config is not None:
+            embedding_model = get_embedding_model(
+                model_type=config.embedding_model_config.model_type.value,
+                model_name=config.embedding_model_config.model_name,
+                api_key=config.embedding_model_config.api_key,
+                azure_endpoint=config.azure_endpoint,
+                azure_embedding_deployment=config.embedding_model_config.model_name,
+                azure_api_version=config.azure_api_version,
+                local_port=config.embedding_model_config.port,
+                context_length=config.embedding_model_config.context_length,
+            )
+            self.tool_rag = ClassifierToolRAG(
+                embedding_model=embedding_model,
+                tools=tools,
+            )

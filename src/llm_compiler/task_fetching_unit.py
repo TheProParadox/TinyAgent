@@ -49,11 +49,16 @@ class Task:
     thought: Optional[str] = None
     observation: Optional[str] = None
     is_join: bool = False
+    eval_mode: bool = False
 
     async def __call__(self) -> Any:
-        log(f"running task {self.name}")
-        x = await self.tool(*self.args)
-        log(f"done task {self.name}")
+        if self.eval_mode==True:
+            x = "<task_output>"
+        else:
+            log(f"running task {self.name}")
+            x = await self.tool(*self.args)
+            log(f"done task {self.name}")
+            
         return x
 
     def get_though_action_observation(
@@ -84,10 +89,11 @@ class TaskFetchingUnit:
     tasks_done: Dict[str, asyncio.Event]
     remaining_tasks: set[str]
 
-    def __init__(self):
+    def __init__(self, eval_mode: bool = False):
         self.tasks = {}
         self.tasks_done = {}
         self.remaining_tasks = set()
+        self.eval_mode = eval_mode
 
     def set_tasks(self, tasks: dict[str, Any]):
         self.tasks.update(tasks)
@@ -116,7 +122,9 @@ class TaskFetchingUnit:
 
     async def _run_task(self, task: Task):
         try:
-            self._preprocess_args(task)
+            if self.eval_mode==False:
+                # When we are evaluating we don't want to replace palceholders
+                self._preprocess_args(task)
             if not task.is_join:
                 observation = await task()
                 task.observation = observation

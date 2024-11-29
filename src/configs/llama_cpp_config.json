@@ -27,8 +27,8 @@
   "mapsEnabled": true,
   "notesEnabled": true,
   "remindersEnabled": true,
-  "smsEnabled": false,
-  "zoomEnabled": false,
+  "smsEnabled": true,
+  "zoomEnabled": true,
   "localModelName": "squeeze-ai-lab/TinyAgent-1.1B",
   "localSubAgentModelName": "squeeze-ai-lab/TinyAgent-1.1B",
   "localTokenizerNameOrPath": "Doctor-Shotgun/TinyLlama-1.1B-32k-Instruct",
@@ -41,6 +41,7 @@
   "localEmbeddingCtxLen": "512",
   "localPort": "8080",
   "hfToken": "",
-  "zoomAccessToken": "",
-  "azureEndpoint": ""
+  "zoomAccessToken": "Dummy Token",
+  "azureEndpoint": "",
+  "eval_mode": true
 }
