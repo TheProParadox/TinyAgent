@@ -50,6 +50,9 @@ class ModelConfig:
     model_type: ModelType
     tokenizer: Tokenizer | None
     port: int | None
+    hfTrustRemoteCode: bool | None
+    examplesPrefix: str | None
+    queryPrefix: str | None
 
 
 @dataclass

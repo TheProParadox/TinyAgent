@@ -19,7 +19,7 @@ from src.tiny_agent.tiny_agent_tools import (
 )
 from src.tiny_agent.tool_rag.base_tool_rag import BaseToolRAG
 from src.tiny_agent.tool_rag.classifier_tool_rag import ClassifierToolRAG
-from src.utils.model_utils import get_embedding_model, get_model
+from src.utils.model_utils import get_embedder, get_model
 
 
 class TinyAgent:
@@ -111,7 +111,7 @@ class TinyAgent:
 
         # Define ToolRAG
         if config.embedding_model_config is not None:
-            embedding_model = get_embedding_model(
+            embedder = get_embedder(
                 model_type=config.embedding_model_config.model_type.value,
                 model_name=config.embedding_model_config.model_name,
                 api_key=config.embedding_model_config.api_key,
@@ -120,11 +120,11 @@ class TinyAgent:
                 azure_api_version=config.azure_api_version,
                 local_port=config.embedding_model_config.port,
                 context_length=config.embedding_model_config.context_length,
+                hf_trust_remote_code=config.embedding_model_config.hfTrustRemoteCode,
+                examples_prefix=config.embedding_model_config.examplesPrefix,
+                query_prefix=config.embedding_model_config.queryPrefix
             )
-            self.tool_rag = ClassifierToolRAG(
-                embedding_model=embedding_model,
-                tools=tools,
-            )
+            self.tool_rag = ClassifierToolRAG(embedder=embedder, tools=tools)
 
     async def arun(self, query: str) -> str:
         if self.config.embedding_model_config is not None:
@@ -222,7 +222,7 @@ class TinyAgentNoReplanning(TinyAgent):
 
         # Define ToolRAG
         if config.embedding_model_config is not None:
-            embedding_model = get_embedding_model(
+            embedder = get_embedder(
                 model_type=config.embedding_model_config.model_type.value,
                 model_name=config.embedding_model_config.model_name,
                 api_key=config.embedding_model_config.api_key,
@@ -231,8 +231,8 @@ class TinyAgentNoReplanning(TinyAgent):
                 azure_api_version=config.azure_api_version,
                 local_port=config.embedding_model_config.port,
                 context_length=config.embedding_model_config.context_length,
+                hf_trust_remote_code=config.embedding_model_config.hfTrustRemoteCode,
+                examples_prefix=config.embedding_model_config.examplesPrefix,
+                query_prefix=config.embedding_model_config.queryPrefix
             )
-            self.tool_rag = ClassifierToolRAG(
-                embedding_model=embedding_model,
-                tools=tools,
-            )
+            self.tool_rag = ClassifierToolRAG(embedder=embedder, tools=tools)

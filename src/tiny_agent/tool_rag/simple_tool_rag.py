@@ -1,22 +1,18 @@
 from typing import Sequence
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_openai import AzureOpenAIEmbeddings, OpenAIEmbeddings
-
 from src.tiny_agent.models import TinyAgentToolName
 from src.tiny_agent.tool_rag.base_tool_rag import BaseToolRAG, ToolRAGResult
 from src.tools.base import StructuredTool, Tool
+from src.tiny_agent.tool_rag.embedder import Embedder
 
 
 class SimpleToolRAG(BaseToolRAG):
     def __init__(
         self,
-        embedding_model: (
-            AzureOpenAIEmbeddings | OpenAIEmbeddings | HuggingFaceEmbeddings
-        ),
+        embedder: Embedder,
         tools: Sequence[Tool | StructuredTool],
     ):
-        super().__init__(embedding_model, tools)
+        super().__init__(embedder, tools)
 
     @property
     def tool_rag_type(self) -> str:

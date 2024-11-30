@@ -1,9 +1,6 @@
-import os
 from typing import Any, Sequence
 
 import torch
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_openai import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -14,6 +11,7 @@ from transformers import (
 from src.tiny_agent.models import TinyAgentToolName
 from src.tiny_agent.tool_rag.base_tool_rag import BaseToolRAG, ToolRAGResult
 from src.tools.base import StructuredTool, Tool
+from src.tiny_agent.tool_rag.embedder import Embedder
 
 
 class ClassifierToolRAG(BaseToolRAG):
@@ -45,13 +43,11 @@ class ClassifierToolRAG(BaseToolRAG):
 
     def __init__(
         self,
-        embedding_model: (
-            AzureOpenAIEmbeddings | OpenAIEmbeddings | HuggingFaceEmbeddings
-        ),
+        embedder: Embedder,
         tools: Sequence[Tool | StructuredTool],
         tool_threshold: float = _DEFAULT_TOOL_THRESHOLD,
     ):
-        super().__init__(embedding_model, tools)
+        super().__init__(embedder, tools)
 
         self._tokenizer = AutoTokenizer.from_pretrained(
             ClassifierToolRAG._CLASSIFIER_MODEL_NAME

@@ -1,17 +1,14 @@
 import abc
 import os
-import pickle
 from dataclasses import dataclass
 from typing import Collection, Sequence
 
 import torch
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_openai import AzureOpenAIEmbeddings, OpenAIEmbeddings
 from typing_extensions import TypedDict
 
-from src.tiny_agent.config import DEFAULT_OPENAI_EMBEDDING_MODEL
 from src.tiny_agent.models import TinyAgentToolName
 from src.tools.base import StructuredTool, Tool
+from src.tiny_agent.tool_rag.embedder import Embedder
 
 TOOLRAG_DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,45 +19,42 @@ class ToolRAGResult:
     retrieved_tools_set: Collection[TinyAgentToolName]
 
 
-class PickledEmbedding(TypedDict):
-    example: str
+class Example(TypedDict):
+    text: str
     embedding: torch.Tensor
     tools: Sequence[str]
 
 
 class BaseToolRAG(abc.ABC):
     """
-    The base class for the ToolRAGs that are used to retrieve the in-context examples and tools based on the user query.
+    The base class for the ToolRAGs that are used to retrieve the in-context examples and tools based on the user
+    query.
     """
 
     _EMBEDDINGS_DIR_PATH = os.path.join(TOOLRAG_DIR_PATH)
-    _EMBEDDINGS_FILE_NAME = "embeddings.pkl"
+    _EMBEDDINGS_FILE_NAME = "examples.pt"
 
-    # Embedding model that computes the embeddings for the examples/tools and the user query
-    _embedding_model: AzureOpenAIEmbeddings | OpenAIEmbeddings | HuggingFaceEmbeddings
+    # Embedder object encapsulates the embedding model that computes the embeddings for the examples/tools and the
+    # user query
+    _embedder: Embedder
     # The set of available tools so that we do an initial filtering based on the tools that are available
     _available_tools: Sequence[TinyAgentToolName]
-    # The path to the embeddings.pkl file
-    _embeddings_pickle_path: str
+    # The path to the examples file
+    _embeddings_path: str
 
-    def __init__(
-        self,
-        embedding_model: (
-            AzureOpenAIEmbeddings | OpenAIEmbeddings | HuggingFaceEmbeddings
-        ),
-        tools: Sequence[Tool | StructuredTool],
-    ) -> None:
-        self._embedding_model = embedding_model
+    def __init__(self, embedder: Embedder, tools: Sequence[Tool | StructuredTool]) -> None:
+        self._embedder = embedder
         self._available_tools = [TinyAgentToolName(tool.name) for tool in tools]
-
-        # TinyAgent currently only supports "text-embedding-3-small" model by default.
-        # Hence, we only use the directory created for the default model.
-        model_name = DEFAULT_OPENAI_EMBEDDING_MODEL
-        self._embeddings_pickle_path = os.path.join(
+        
+        _embeddings_path = os.path.join(
             BaseToolRAG._EMBEDDINGS_DIR_PATH,
-            model_name.split("/")[-1],  # Only use the last model name
+            embedder.model_name,
             BaseToolRAG._EMBEDDINGS_FILE_NAME,
         )
+        assert os.path.exists(_embeddings_path), ("When using ToolRAG, a precomputed embeddings file for "
+                                                  "in-context examples must be present at the path "
+                                                  f"{_embeddings_path}")
+        self._embeddings_path = _embeddings_path
 
     @property
     @abc.abstractmethod
@@ -75,8 +69,8 @@ class BaseToolRAG(abc.ABC):
         pass
 
     def _retrieve_top_k_embeddings(
-        self, query: str, examples: list[PickledEmbedding], top_k: int
-    ) -> list[PickledEmbedding]:
+        self, query: str, examples: list[Example], top_k: int
+    ) -> list[Example]:
         """
         Computes the cosine similarity of each example and retrieves the closest top_k examples.
         If there are already less than top_k examples, returns the examples directly.
@@ -84,7 +78,7 @@ class BaseToolRAG(abc.ABC):
         if len(examples) <= top_k:
             return examples
 
-        query_embedding = torch.tensor(self._embedding_model.embed_query(query))
+        query_embedding = self._embedder.embed_query(query)
         embeddings = torch.stack(
             [x["embedding"] for x in examples]
         )  # Stacking for batch processing
@@ -102,16 +96,13 @@ class BaseToolRAG(abc.ABC):
 
         return selected_examples
 
-    def _load_filtered_embeddings(
-        self, filter_tools: list[TinyAgentToolName] | None = None
-    ) -> list[PickledEmbedding]:
+    def _load_filtered_embeddings(self, filter_tools: list[TinyAgentToolName] | None = None) -> list[Example]:
         """
-        Loads the embeddings.pkl file that contains a list of PickledEmbedding objects
-        and returns the filtered results based on the available tools.
+        Loads the examples file that contains a list of Example objects and returns the filtered results based
+        on the available tools.
         """
-        with open(self._embeddings_pickle_path, "rb") as file:
-            embeddings: dict[str, PickledEmbedding] = pickle.load(file)
 
+        embeddings: dict[str, Example] = torch.load(self._embeddings_path, weights_only=True)
         filtered_embeddings = []
         tool_names = [tool.value for tool in filter_tools or self._available_tools]
         for embedding in embeddings.values():
@@ -122,7 +113,7 @@ class BaseToolRAG(abc.ABC):
         return filtered_embeddings
 
     @staticmethod
-    def _get_in_context_examples_prompt(embeddings: list[PickledEmbedding]) -> str:
-        examples = [example["example"] for example in embeddings]
+    def _get_in_context_examples_prompt(embeddings: list[Example]) -> str:
+        examples = [example["text"] for example in embeddings]
         examples_prompt = "###\n".join(examples)
         return f"{examples_prompt}###\n"

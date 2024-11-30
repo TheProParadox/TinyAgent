@@ -101,9 +101,9 @@ async def print_response(user_query, config_path):
 
 
 if __name__ == "__main__":
-    import argparse
+    from argparse import ArgumentParser
 
-    arg_parser = argparse.ArgumentParser()
+    arg_parser = ArgumentParser()
     arg_parser.add_argument("--config_path", type=str, required=True)
     args = arg_parser.parse_args()
 

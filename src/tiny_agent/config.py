@@ -114,6 +114,21 @@ def get_model_config(
             and len(config[f"local{agent_prefix}Port"]) > 0
             else None
         ),
+        hfTrustRemoteCode = (
+            config[f"local{agent_prefix}HFTrustRemoteCode"]
+            if agent_type==AgentType.EMBEDDING
+            else None
+        ),
+        examplesPrefix = (
+            config[f"local{agent_prefix}ExamplesPrefix"]
+            if agent_type==AgentType.EMBEDDING
+            else None
+        ),
+        queryPrefix = (
+            config[f"local{agent_prefix}QueryPrefix"]
+            if agent_type==AgentType.EMBEDDING
+            else None
+        )
     )
 
 
@@ -162,7 +177,7 @@ def get_tiny_agent_config(config_path: str) -> TinyAgentConfig:
     ):
         raise ValueError("In-context example retriever provider not found in config")
     
-    if (eval_mode := config.get("eval_mode")) is None:
+    if (eval_mode := config.get("evalMode")) is None:
         raise ValueError("Evaluation mode specifier not found in config")
 
     # Get the model configs
@@ -272,3 +287,11 @@ def _check_local_config(config: dict[str, Any], agent_prefix: str) -> None:
         config, f"local{agent_prefix}ModelName"
     ):
         raise ValueError(f"Local {agent_prefix} model name not found in config")
+    if (is_embedding_model and
+        (
+            (hfTrustRemoteCode := config.get(f"local{agent_prefix}HFTrustRemoteCode")) is None or
+            not isinstance(hfTrustRemoteCode, bool)
+        )
+    ):
+        raise ValueError((f"For local {agent_prefix}, Hugging Face remote code execution permission "
+                          f"(local{agent_prefix}HFTrustRemoteCode) needs to be allowed/denied in config"))

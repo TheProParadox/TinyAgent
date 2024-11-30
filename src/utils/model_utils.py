@@ -4,6 +4,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import AzureOpenAIEmbeddings, OpenAIEmbeddings
 
 from src.utils.logger_utils import log
+from src.tiny_agent.tool_rag.embedder import Embedder
+
 
 DEFAULT_SAFE_CONTEXT_LENGTH = 512
 DEFAULT_SENTENCE_TRANSFORMER_BATCH_SIZE = 128
@@ -80,7 +82,7 @@ def get_model(
     return llm
 
 
-def get_embedding_model(
+def get_embedder(
     model_type: str,
     model_name: str,
     api_key: str,
@@ -89,14 +91,17 @@ def get_embedding_model(
     azure_api_version: str | None,
     local_port: int | None,
     context_length: int | None,
-) -> OpenAIEmbeddings | AzureOpenAIEmbeddings | HuggingFaceEmbeddings:
+    hf_trust_remote_code: bool | None,
+    examples_prefix: str | None,
+    query_prefix: str | None
+) -> Embedder:
     if model_name is None:
         raise ValueError("Embedding model's model_name must be provided")
 
     if model_type == "openai":
         if api_key is None:
             raise ValueError("api_key must be provided for openai model")
-        return OpenAIEmbeddings(api_key=api_key, model=model_name)
+        embedding_model = OpenAIEmbeddings(api_key=api_key, model=model_name)
     elif model_type == "azure":
         if api_key is None:
             raise ValueError("api_key must be provided for azure model")
@@ -104,7 +109,7 @@ def get_embedding_model(
             raise ValueError("azure_api_version must be provided for azure model")
         if azure_endpoint is None:
             raise ValueError("azure_endpoint must be provided for azure model")
-        return AzureOpenAIEmbeddings(
+        embedding_model = AzureOpenAIEmbeddings(
             api_key=api_key,
             api_version=azure_api_version,
             azure_endpoint=azure_endpoint,
@@ -114,23 +119,27 @@ def get_embedding_model(
     elif model_type == "local":
         if local_port is None:
             # Use SentenceTransformer for local embeddings
-            return HuggingFaceEmbeddings(
+            embedding_model = HuggingFaceEmbeddings(
                 model_name=model_name,
                 encode_kwargs={"batch_size": DEFAULT_SENTENCE_TRANSFORMER_BATCH_SIZE},
+                model_kwargs={"trust_remote_code": hf_trust_remote_code}
             )
-        if context_length is None:
-            print(
-                "WARNING: context_length not provided for local model. Using default value (512).",
-                flush=True,
+        else:
+            if context_length is None:
+                print(
+                    "WARNING: context_length not provided for local model. Using default value (512).",
+                    flush=True,
+                )
+                context_length = DEFAULT_SAFE_CONTEXT_LENGTH
+            embedding_model = OpenAIEmbeddings(
+                api_key=api_key,
+                base_url=f"http://localhost:{local_port}/v1",
+                model=model_name,
+                embedding_ctx_length=context_length - 1,
+                tiktoken_enabled=False,
+                tiktoken_model_name=model_name,
             )
-            context_length = DEFAULT_SAFE_CONTEXT_LENGTH
-        return OpenAIEmbeddings(
-            api_key=api_key,
-            base_url=f"http://localhost:{local_port}/v1",
-            model=model_name,
-            embedding_ctx_length=context_length - 1,
-            tiktoken_enabled=False,
-            tiktoken_model_name=model_name,
-        )
     else:
         raise NotImplementedError(f"Unknown model type: {model_type}")
+    
+    return Embedder(embedding_model, examples_prefix, query_prefix)

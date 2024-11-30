@@ -1,0 +1,27 @@
+{
+    "backgroundColor": "#E3E4EC",
+    "textColor": "#5C5C5A",
+    "searchBarFont": {
+      "name": "Menlo",
+      "size": 22
+    },
+    "searchBarHeight": 50,
+    "insertionPointColor": "#525250",
+    "maximumWidth": 600,
+    "maximumHeight": 300,
+    "customInstructions": "",
+    "useToolRAG": true,
+    "toolRAGProvider": "local",
+    "activationKeyboardShortcut": {
+      "key": { "keyCode": 49 },
+      "modifiers": ["option"],
+      "events": ["keyDown"]
+    },
+    "localEmbeddingModelName": "nomic-ai/nomic-embed-text-v1.5",
+    "localEmbeddingPort": "",
+    "localEmbeddingCtxLen": "8192",
+    "localEmbeddingHFTrustRemoteCode": false,
+    "localEmbeddingExamplesPrefix": "clustering: ",
+    "localEmbeddingQueryPrefix": "clustering: ",
+    "azureEndpoint": ""
+  }
