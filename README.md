@@ -1,16 +1,12 @@
 # TinyAgent: Function Calling at the Edge
 <!--- BADGES: START --->
 [![Arxiv](https://img.shields.io/badge/arXiv-2409.00608-B31B1B.svg)][#arxiv-paper-package]
-[![GitHub license](https://img.shields.io/badge/License-MIT-blu.svg)][#license-gh-package]
 
-[#license-gh-package]: https://lbesson.mit-license.org/
 [#arxiv-paper-package]: https://arxiv.org/abs/2409.00608
 <!--- BADGES: END --->
 
 <p align="center">
-<a href="https://github.com/SqueezeAILab/TinyAgent/raw/main/TinyAgent.zip">Get the desktop app</a>‎ ‎ 
-  |‎ ‎ 
-<a href="https://bair.berkeley.edu/blog/2024/05/29/tiny-agent">Read the blog post</a>‎ ‎
+<a href="https://github.com/SqueezeAILab/TinyAgent/raw/main/TinyAgent.zip">Get the MAC desktop app</a>‎ ‎ 
   |‎ ‎
 <a href="https://arxiv.org/pdf/2409.00608">Read the paper</a>
 </p>
@@ -104,17 +100,9 @@ When faced with challenging tasks, SLM agents require appropriate tools and in-c
 
 > You need to first install our [ToolRAG model](https://huggingface.co/squeeze-ai-lab/TinyAgent-ToolRAG) from Hugging Face and enable it from the TinyAgent settings to use it.  
 
-### 🎙️ Whisper
-
-TinyAgent also accepts voice commands through both the OpenAI Whisper API and local [whisper.cpp](https://github.com/ggerganov/whisper.cpp) deployment. For whisper.cpp, you need to setup the [local whisper server](https://github.com/ggerganov/whisper.cpp/tree/master/examples/server) and provide the server port number in the TinyAgent settings.
-
 ## Providers
 
 You can use with your OpenAI key, Azure deployments, or even your own local models!
-
-### OpenAI
-
-You need to provide OpenAI API Key and the models you want to use in the 'Preferences' window.
 
 ### Azure Deployments
 
