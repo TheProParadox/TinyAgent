@@ -1,6 +1,7 @@
 # Port of TinyAgent
 
 This is a port of TinyAgent which allows for evaluation and completely local execution.
+
 ## Evaluation
 
 - We modify the code to use a single planning step with LLMCompiler. Replanning requires the actual results of running tools on MacOS, which makes evaluation challenging. A single planning step can evaluate the planner LLM without relying on tool execution results.
@@ -14,6 +15,8 @@ This is a port of TinyAgent which allows for evaluation and completely local exe
 - We also provide paraphrases of the tool names, tool argument names and tool descriptions of all the tools in the TinyAgent dataset. These were used to probe the generalization capability of TinyAgent models when they were given the same tools with different but equivalent names, arguments and descriptions.
 
 - The parsing of the LLM planner's output had some assumptions which don't always hold true. For example it was assumed that the LLM would always produce a list of actions starting with index 1. When this was not the case the program would crash. We modified the parsing to make it more robust.
+
+To run the evaluation fill the config at `src/configs/eval/config.json` and then run `src/eval/eval.py`
 
 ## Completely local execution
 
