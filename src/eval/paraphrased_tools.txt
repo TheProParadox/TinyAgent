@@ -1,0 +1,93 @@
+schedule_event(event_title: str, start_time: str, end_time: str, event_location: str, participant_emails: list[str], additional_notes: str, calendar_id: str) -> str
+ - Schedules a new event on the calendar.
+ - The start_time and end_time should be in the format 'YYYY-MM-DD HH:MM:SS'.
+ - The participant_emails should be a list of email addresses; if no invitees, pass an empty list.
+ - If the event does not have a specific location, notes, or calendar ID, use an empty string or None.
+ - Returns a status message indicating the result of the event creation.
+
+find_contact_number(contact_name: str) -> str
+ - Look up a contact using their name.
+ - Returns the phone number associated with the contact.
+
+find_contact_email(contact_name: str) -> str
+ - Look up a contact using their name.
+ - Returns the email address associated with the contact.
+
+open_and_retrieve_file_path(filename: str) -> str
+ - This function opens the specified file and returns the complete path to it.
+ - filename is the name of the file to be opened.
+
+generate_pdf_summary(pdf_file_path: str) -> str
+ - Generates a brief summary of the content within a PDF file and returns the condensed version.  
+ - This function should only be used AFTER invoking the open_and_retrieve_file_path tool to retrieve the file path of the PDF.
+
+create_email(to_addresses: list[str], cc_addresses: list[str], email_subject: str, email_context: str, files_to_attach: list[str]) -> str
+ - Generates a new email and returns the status of the email creation process.  
+ - Both to_addresses and cc_addresses can be either a single email address or a list of email addresses.
+ - The files_to_attach argument can be a single file path or a list of file paths.
+ - The email_context argument is optional and should only be used to provide any interim information. If no additional context is needed, it should be an empty string.
+ - To include a location in the email, you MUST specify it in the email_context parameter.  
+ - For sending a Zoom link, it MUST be placed in the email_context parameter.
+
+respond_to_email(cc_addresses: list[str], email_context: str, file_attachments: list[str]) -> str
+ - Sends a response to the currently selected email in the Mail application with the specified content.  
+ - The cc_addresses argument can either be a single email address or a list of email addresses.
+ - The file_attachments argument can either be a single file path or a list of file paths.
+ - The email_context argument is optional and should be used to pass along any intermediate result; otherwise, it can be left as an empty string.
+
+send_email_forward(to_addresses: list[str], cc_addresses: list[str], email_context: str, files_to_attach: list[str]) -> str
+ - Forwards the currently selected email in Mail with the specified content.
+ - Both the to_addresses and cc_addresses parameters can either be a single email address or a list of email addresses.
+ - The files_to_attach parameter can either be a single file path or a list of file paths.
+ - The email_context parameter is optional and should be used only to pass any relevant intermediate data. If not needed, pass an empty string instead.
+
+open_location_in_apple_maps(location_query: str) -> str
+ - Opens the given location in Apple Maps.  
+ - The input can be a name of a place, a physical address, or geographical coordinates.  
+ - Returns the URL pointing to the location on Apple Maps.
+
+get_route_in_apple_maps(from_location: str, to_location: str, mode_of_transport: str) -> str
+ - Provides directions from a starting location to a destination using Apple Maps.
+ - The mode_of_transport argument defaults to 'd' (driving), but can also be set to 'w' (walking) or 'r' (public transit).
+ - If the starting location is not specified, the device's current location will be used by default.
+ - Returns a URL with the location and directions in Apple Maps.
+
+generate_note(title: str, text: str, directory: str) -> str
+ - Generates a new note with the provided text.
+ - The title will be used as the note’s heading.
+ - The text parameter serves as the primary body of the note.
+ - The directory is optional; use an empty string if not needed.
+ - Returns a status indicating the success of the note creation.
+
+access_note(note_title: str, directory: str) -> str
+ - Accesses an existing note using its title.
+ - If a directory is provided, the note will be created within that directory; otherwise, it will be created in the default directory.
+ - Returns the content of the note.
+
+add_to_note(note_name: str, note_content: str, directory: str) -> str
+ - Adds the provided content to an existing note.
+ - If a directory is specified, the note is added to that directory; if not, it is added to the default directory.
+ - Returns the status indicating whether the content was successfully appended.
+
+add_reminder(reminder_name: str, deadline: str, description: str, list_category: str, importance_level: int, full_day: bool) -> str
+ - Adds a new reminder to the reminder system and returns a status message indicating whether the reminder was successfully created.
+ - reminder_name is the name or title of the reminder.
+ - deadline is the due date and time for the reminder, in the format 'YYYY-MM-DD HH:MM:SS'. If full_day is True, use 'YYYY-MM-DD'.
+ - description is the additional notes or details about the reminder.
+ - The list_category is optional and should be left as an empty string if not used.
+ - importance_level is the priority level of the reminder, ranging from 0 to higher values. Defaults to 0 if not specified.
+ - full_day indicates whether the reminder is for the entire day. Defaults to False.
+
+deliver_text_message(contacts: list[str], text: str) -> str
+- Sends a text message to one or more phone numbers specified by the contacts parameter.
+- The contacts parameter can either be a single phone number or a list of multiple phone numbers.
+- Returns the status of the sent message.
+ 
+generate_zoom_meeting_url(meeting_topic: str, start_datetime: str, meeting_duration: int, invitees_list: Sequence[str]) -> str
+ - Creates a Zoom meeting and returns the URL to join the meeting.  
+ - You should call schedule_event to add the Zoom link as a note to the calendar event, or create_email to send the meeting link to the invitees via email.
+ - meeting_topic is a string representing the title of the meeting.
+ - start_datetime is a string representing the start date and time of the meeting in the format 'YYYY-MM-DD HH:MM:SS'.
+ - meeting_duration is an integer specifying the duration of the meeting in minutes. 
+ - invitees_list is a sequence of strings containing the email addresses of individuals invited to the meeting.
+ - The arguments meeting_topic, start_datetime, meeting_duration, and invitees_list are all required.

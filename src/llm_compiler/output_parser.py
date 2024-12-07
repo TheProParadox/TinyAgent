@@ -97,12 +97,12 @@ def _find_tool(
 
 
 def _get_dependencies_from_graph(
-    idx: int, tool_name: str, args: Sequence[Any]
-) -> dict[str, list[str]]:
+    idx: int, tool_name: str, args: str
+) -> list[int]:
     """Get dependencies from a graph."""
     if tool_name == "join":
-        # depends on the previous step
-        dependencies = list(range(1, idx))
+        # Join is treated specially later so it has no dependencies filled here
+        dependencies = []
     else:
         # define dependencies based on the dependency rule in tool_definitions.py
         dependencies = [i for i in range(1, idx) if default_dependency_rule(i, args)]

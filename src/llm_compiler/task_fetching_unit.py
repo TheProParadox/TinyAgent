@@ -104,13 +104,17 @@ class TaskFetchingUnit:
         return all(self.tasks_done[d].is_set() for d in self.tasks_done)
 
     def _get_all_executable_tasks(self):
-        return [
-            task_name
-            for task_name in self.remaining_tasks
-            if all(
-                self.tasks_done[d].is_set() for d in self.tasks[task_name].dependencies
-            )
-        ]
+        executable_tasks = []
+        for task_name in self.remaining_tasks:
+            # If the task is join then everything that is not join must be finished
+            if self.tasks[task_name].is_join==True \
+            and all(self.tasks_done[d.idx].is_set() for d in self.tasks.values() if d.is_join==False):
+                executable_tasks.append(task_name)
+            elif self.tasks[task_name].is_join==False \
+            and all(self.tasks_done[d].is_set() for d in self.tasks[task_name].dependencies):
+                executable_tasks.append(task_name)
+     
+        return executable_tasks
 
     def _preprocess_args(self, task: Task):
         """Replace dependency placeholders, i.e. ${1}, in task.args with the actual observation."""
@@ -123,7 +127,7 @@ class TaskFetchingUnit:
     async def _run_task(self, task: Task):
         try:
             if self.eval_mode==False:
-                # When we are evaluating we don't want to replace palceholders
+                # When we are evaluating we don't want to replace placeholders
                 self._preprocess_args(task)
             if not task.is_join:
                 observation = await task()

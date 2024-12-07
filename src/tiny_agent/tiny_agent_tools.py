@@ -221,7 +221,7 @@ def get_summarize_pdf_tool(
         description=(
             f"{TinyAgentToolName.SUMMARIZE_PDF.value}(pdf_path: str) -> str\n"
             " - Summarizes the content of a PDF file and returns the summary.\n"
-            " - This tool can only be used AFTER calling open_and_get_file_path tool to get the PDF file path.\n"
+            f" - This tool can only be used AFTER calling {TinyAgentToolName.OPEN_AND_GET_FILE_PATH.value} tool to get the PDF file path.\n"
         ),
         stringify_rule=lambda args: f"{TinyAgentToolName.SUMMARIZE_PDF.value}({args[0]})",
     )

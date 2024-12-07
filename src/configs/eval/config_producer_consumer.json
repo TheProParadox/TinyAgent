@@ -1,0 +1,8 @@
+{
+    "annotations_path": "<path to JSON file containing annotations>",
+    "num_generators": 8,
+    "num_evaluators": 8,
+    "generation_queue_size": 8,
+    "tinyagent_config_path": "<path to JSON file containing TinyAgent config>",
+    "save_dir": "<path to directory where eval results are saved>"
+}
