@@ -1,15 +1,35 @@
-# TinyAgent: Function Calling at the Edge
-<!--- BADGES: START --->
-[![Arxiv](https://img.shields.io/badge/arXiv-2409.00608-B31B1B.svg)][#arxiv-paper-package]
+# Port of TinyAgent
 
-[#arxiv-paper-package]: https://arxiv.org/abs/2409.00608
-<!--- BADGES: END --->
+This is a port of TinyAgent which allows for evaluation and completely local execution.
+## Evaluation
 
-<p align="center">
-<a href="https://github.com/SqueezeAILab/TinyAgent/raw/main/TinyAgent.zip">Get the MAC desktop app</a>‎ ‎ 
-  |‎ ‎
-<a href="https://arxiv.org/pdf/2409.00608">Read the paper</a>
-</p>
+- We modify the code to use a single planning step with LLMCompiler. Replanning requires the actual results of running tools on MacOS, which makes evaluation challenging. A single planning step can evaluate the planner LLM without relying on tool execution results.
+
+- We also add a convenient evaluation mode flag which makes sure that tools are not actually run (since we don't need tool execution results for evaluation and also since many tools rely on being run in MacOS). This flag also makes sure that placeholder arguments produced by the planner are not replaced (since they are necessary for creating the DAG for evaluation).
+
+- TinyAgent is also coupled with OpenAI's Whisper, which we remove since it isn't relevant for evaluation.
+
+- We provide code to evaluate TinyAgent on the TinyAgent dataset
+
+- We also provide paraphrases of the tool names, tool argument names and tool descriptions of all the tools in the TinyAgent dataset. These were used to probe the generalization capability of TinyAgent models when they were given the same tools with different but equivalent names, arguments and descriptions.
+
+- The parsing of the LLM planner's output had some assumptions which don't always hold true. For example it was assumed that the LLM would always produce a list of actions starting with index 1. When this was not the case the program would crash. We modified the parsing to make it more robust.
+
+## Completely local execution
+
+- The orignal TinyAgent lets you run local LLMs but still requires the OpenAI embedding API
+
+- We replace OpenAI embeddings with embeddings from `nomic-ai/nomic-embed-text-v1.5`. It has similar performance on the MTEB benchmark as the `text-embedding-3-small` used by the original TinyAgent
+
+- The embeddings of in-context examples produced by `nomic-ai/nomic-embed-text-v1.5` are provided
+-  A script is provided which can use any other embedding model to generate the embeddings
+
+
+Check out the original project at [https://github.com/SqueezeAILab/TinyAgent](https://github.com/SqueezeAILab/TinyAgent) and the paper at [https://arxiv.org/abs/2409.00608](https://arxiv.org/abs/2409.00608)
+
+
+## Original README
+
 
 ![Thumbnail](figs/tinyagent.png)
 
@@ -226,16 +246,12 @@ custom_agent: CustomAgent
 
 ## Citation
 
-We would appreciate it if you could please cite our [paper](https://arxiv.org/pdf/2409.00608) if you found TinyAgent useful for your work:
-
 ```
-@misc{erdogan2024tinyagentfunctioncallingedge,
-      title={TinyAgent: Function Calling at the Edge},
-      author={Lutfi Eren Erdogan and Nicholas Lee and Siddharth Jha and Sehoon Kim and Ryan Tabrizi and Suhong Moon and Coleman Hooper and Gopala Anumanchipalli and Kurt Keutzer and Amir Gholami},
-      year={2024},
-      eprint={2409.00608},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2409.00608},
+@inproceedings{erdogan2024tinyagent,
+  title={TinyAgent: Function Calling at the Edge},
+  author={Erdogan, Lutfi and Lee, Nicholas and Jha, Siddharth and Kim, Sehoon and Tabrizi, Ryan and Moon, Suhong and Hooper, Coleman and Anumanchipalli, Gopala and Keutzer, Kurt and Gholami, Amir},
+  booktitle={Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing: System Demonstrations},
+  pages={80--88},
+  year={2024}
 }
 ```
