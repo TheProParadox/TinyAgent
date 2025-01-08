@@ -28,13 +28,7 @@ To run the evaluation fill the config at `src/configs/eval/config.json` and then
 -  A script is provided which can use any other embedding model to generate the embeddings
 
 
-Check out the original project at [https://github.com/SqueezeAILab/TinyAgent](https://github.com/SqueezeAILab/TinyAgent) and the paper at [https://arxiv.org/abs/2409.00608](https://arxiv.org/abs/2409.00608)
-
-
-## Original README
-
-
-![Thumbnail](figs/tinyagent.png)
+Check out the original project at [https://github.com/SqueezeAILab/TinyAgent](https://github.com/SqueezeAILab/TinyAgent)
 
 TinyAgent aims to enable complex reasoning and function calling capabilities in Small Language Models (SLMs) that can be deployed securely and privately at the edge. Traditional Large Language Models (LLMs) like GPT-4 and Gemini-1.5, while powerful, are often too large and resource-intensive for edge deployment, posing challenges in terms of privacy, connectivity, and latency. TinyAgent addresses these challenges by training specialized SLMs with high-quality, curated data, and focusing on function calling with [LLMCompiler](https://github.com/SqueezeAILab/LLMCompiler). As a driving application, TinyAgent can interact with various MacOS applications, assisting users with day-to-day tasks such as composing emails, managing contacts, scheduling calendar events, and organizing Zoom meetings.
 
